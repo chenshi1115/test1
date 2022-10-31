@@ -1,0 +1,25 @@
+dmp:
+  permissions:
+    buttons:
+      "[dataservice/api]":
+        - add
+        - edit
+        - delete
+        - binding
+        - import
+        - export
+        - copy
+        - test
+      “[dataservice/application]”:
+        - add
+        - edit
+        - delete
+        - binding
+        - batchOperation
+        - import
+        - export
+      "[dataservice/apiGroup]":
+        - add
+        - edit
+        - delete
+

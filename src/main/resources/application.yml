@@ -1,0 +1,65 @@
+#指定配置环境
+spring:
+  application:
+    name: dmp-base
+  profiles:
+    active: @activatedProperties@
+  main:
+    allow-bean-definition-overriding: true
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+server:
+  #指定项目端口
+  port: 8093
+  servlet:
+    #指定项目路径
+    context-path: /${spring.application.name}
+  tomcat:
+    uri-encoding: UTF-8
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/javascript,text/css,application/json,application/xml,text/html,text/xml,text/plain
+#设置ribbon过期时间
+ribbon:
+  ReadTimeout: 9000
+  ConnectTimeout: 9000
+  MaxAutoRetries: 0
+  MaxAutoRetriesNextServer: 1
+feign:
+  hystrix:
+    enabled: true
+  httpclient:
+    enabled: false
+  okhttp:
+    enabled: true
+  compression:
+    request:
+      min-request-size: 1024
+      mime-types: text/xml,application.xml,application/json
+      enabled: true
+    response:
+      enabled: true
+hystrix:
+  command:
+    default:
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          strategy: SEMAPHORE
+          thread:
+            timeoutInMilliseconds: 36000
+      circuitBreaker:
+        enabled: true
+        requestVolumeThreshold: 20
+        sleepWindowInMilliseconds: 10000
+        errorThresholdPercentage: 50

@@ -1,0 +1,286 @@
+spring:
+  sleuth:
+    sampler:
+      probability: 1.0
+    enabled: true
+  boot:
+    admin:
+      client:
+        url: ecs-admin
+  redis:
+    # redis数据库索引(默认为0)，我们使用索引2的数据库，避免和其他数据库冲突
+    database: 1
+    # redis服务器地址
+    host: 192.168.60.102
+    # redis访问密码（默认为空）
+    password: ${REDIS_PASSWORD}
+    # redis端口（默认为6379）
+    port: 46379
+    jedis:
+      pool:
+        # 最大可用连接数（默认为8，负数表示无限）
+        max-active: 200
+        # 最大空闲连接数（默认为8，负数表示无限）
+        max-idle: 5
+        # 最小空闲连接数（默认为0，该值只有为正数才有用）
+        min-idle: 0
+        #从连接池中获取连接最大等待时间（默认为-1，单位为毫秒，负数表示无限）
+        max-wait: 1000
+    timeout: 3000
+
+  #Druid 连接池通用配置
+  datasource:
+    druid:
+      # 下面为连接池的补充设置，应用到上面所有数据源中
+      # 初始化大小，最小，最大
+      initial-size: 5
+      min-idle: 5
+      max-active: 100
+      # 配置获取连接等待超时的时间
+      max-wait: 6000
+      # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+      time-between-eviction-runs-millis: 60000
+      # 配置一个连接在池中最小生存的时间，单位是毫秒
+      min-evictable-idle-time-millis: 25200000
+      # sql 校验
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      keep-alive: true
+      # 打开PSCache，并且指定每个连接上PSCache的大小
+      pool-prepared-statements: true
+      # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+      max-pool-prepared-statement-per-connection-size: 20
+      filter:
+        wall:
+          config:
+            multi-statement-allow: true
+            comment-allow: true
+      filters: stat,log4j2
+      # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      remove-abandoned: true
+      remove-abandoned-timeout: 1800
+      log-abandoned: true
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver  #oracle.jdbc.OracleDriver（oracle驱动包）
+    url: jdbc:mysql://192.168.60.102:43306/dmp_hewp21080901?characterEncoding=utf8&useUnicode=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${DB_PASSWORD}
+    db:
+      azkabandb: #azkaban数据库地址
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.60.107:6133/azkaban_tongwei?characterEncoding=utf8&useUnicode=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+        username: root
+        password: ${DB_PASSWORD}
+  custom:
+    feign:
+      enabled: true
+      opion:
+        connectTimeoutMillis: 150000 #链接超时时间
+        readTimeoutMillis: 150000 #响应超时时间，如果超过10秒没有接过发起下一次请求
+      retry:
+        period: 5000 #发起当前请求的时间间隔，单位毫秒
+        maxPeriod: 5000 #发起当前请求的最大时间间隔，单位毫秒
+        maxAttempts: 1 #最多请求次数，包括第一次
+mybatis:
+  configuration:
+    #使全局的映射器启用或禁用缓存。
+    cache-enabled: false
+    #设置本地缓存范围 session:就会有数据的共享  statement:语句范围 (这样就不会有数据的共享 ) defalut:session
+    local-cache-scope: statement
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    #log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    call-setters-on-nulls: true
+  #mybatis的xml路径
+  mapper-locations: classpath*:com/**/dao/**/*DAO.xml,mapper/*.xml,${mapper.dialect}
+  type-aliases-package: com.**.entity
+  type-handlers-package: com.yuanian.infrastructure.util.service.typehandler
+#分页插件
+pagehelper:
+  helperDialect: mysql #oracle修改为oracle
+  params: count=countSql
+  reasonable: false
+  supportMethodsArguments: true
+mapper:
+  dialect: classpath*:com/**/dao/**/*mysql.xml
+  #dialect: classpath*:com/**/dao/**/*oracle.xml #oracle数据库
+
+management:
+  health:
+    redis:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: ALWAYS
+#swagger
+com:
+  yuanian:
+    metadata:
+      autoInitial: false #元对象初始化开关
+      localInitialModuleName: base
+      localCacheEnable: false #是否启用元对象本地，如果打开redis，可以打开本地缓存，否则不开启
+      controlByVersion: true #强制更新元数据表，默认true,比较版本号
+      checkJsonType: false
+    redisKeyPrefix: dmp #redis前缀
+ribbon:
+  ReadTimeout: 150000
+  ConnectTimeout: 150000
+  MaxAutoRetries: 0
+  MaxAutoRetriesNextServer: 1
+feign:
+  hystrix:
+    enabled: true
+  httpclient:
+    enabled: false
+  okhttp:
+    enabled: true
+  compression:
+    request:
+      min-request-size: 1024
+      mime-types: text/xml,application.xml,application/json
+      enabled: true
+    response:
+      enabled: true
+hystrix:
+  command:
+    default:
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          strategy: SEMAPHORE
+          thread:
+            timeoutInMilliseconds: 600000
+      circuitBreaker:
+        enabled: true
+        requestVolumeThreshold: 20   #20/10s 20个请求
+        sleepWindowInMilliseconds: 10000 #默认熔断1os
+        errorThresholdPercentage: 50 #错误率
+yn:
+  mq:
+    enable: false
+    defaultBinder: rocket
+    nameServers: 192.168.60.102:49876
+    prefix: hewp21080901
+    reconsumeTimes: 3
+  openDebugLog: false #是否开启debug日志
+  login:
+    token-effective-time-web: 120 # 分钟
+    token-effective-time-app: 10080 # 分钟
+  login-auth-filter:
+    isOpen: true #鉴权开关
+    #当console_super被禁用时，需配置一系统管理员角色用户名，用于白名单模拟登录
+    #imitateLoginName: console_super
+    exclusionsList: #与 yn.loginAuthfilter.exclusions 配置互斥，exclusionsList优先
+      - /console/v2/api/*
+      - /logs/*
+      - /console/v2/login/*
+      - /console/v2/user/sendKaptchaToEmail
+      - /console/v2/user/getPasswordRule
+      - /console/v2/user/getLoginNameByKaptcha
+      - /console/v2/user/resetPwdByEmailCode
+      - /console/v2/enterpriseInfo/getEnterpriseInfo
+      - /console/client/task/receiveTask
+      - /console/client/auth/ssoLogin
+      - /console/client/auth/authenticate
+      - /console/client/user/getMsgLanCodeByLoginName
+      - /console/client/ynCloud/login
+      - /v2/api-docs*
+      - /swagger-resources*
+      - /webjars/*
+      - /i18n/v2/language/getEnableLanguages
+      - /i18n/v2/static/queryAllPageLanguages
+      - /actuator
+      - /actuator/*
+      - /doc.html*
+      - /swagger-ui.html
+      - /businessobject/describe
+      - /metadata/describe
+      - /flow/runtime/clearFlowCaches
+      - /masterdata/metadata/sysUser/*
+      - /masterdata/metadata/sysUser
+      - /masterdata/client/getSysUserById
+      - "*healthz"
+      - /authority/client/data/getAuthData
+      - /authority/client/*
+      - /masterdata/dimSync/syncDims
+      - /masterdata/userSync/syncUsersss
+      - /console/sso/*
+      - /login/heartBeart
+      - /haierlogin/login
+      - /login/heartBeart
+      - /haierlogin/login
+      - /systemParameter/queryAllParams
+      - /getRelationList
+      - /registerRel
+      - /api/sso/fbcSsoLoginAdress
+      - /open/interface/*
+      - /systemParameter/getSystemParameterByKey
+      - /systemParameter/getSystemParameterListByKeys
+    token-security-enable: false
+    token-security-effective-time: 10000 #每次请求的有效时间
+    token-security-whitelist: #token安全校验白名单，此列表继承上面 exclusionsList 列表
+      - "*/client/*"
+      - /console/notice/downloadAttachment
+      - /baseData/cache/aggregation/data
+    signature:
+      ssologin:
+      secret-key: ssoLoginKey@20201218
+      effective-time: 20  #秒
+
+console-service-name: console
+#最小化部署标志。最小化部署：minimized
+#deploymentFlag: minimized
+
+#按钮权限.组合模式：ASSOCIATION_MODEL，独立模式：STANDALONE_MODEL
+#组合模式：比如离线数据流和数据集成需要一起部署。独立模式：独立部署数据集成，不需要部署离线数据流
+dmp:
+  permissions:
+    buttons:
+      "KafkaList" :
+        - ADD_TOPIC
+        - EDIT_TOPIC
+        - DELETE_TOPIC
+        - EDIT_SCHEMA
+      "Spark" :
+        - STANDALONE_MODEL
+      "dataIntegrate" :
+        - STANDALONE_MODEL
+  with-azkaban: true
+  # Azkaban定时调度运行状态回写任务配置，key不能有大写
+  schedule-running-state-job:
+    corn:
+      offline-job: '0/35 * * * * ?'
+      spark-job: '0/35 * * * * ?'
+      # 兼容历史数据定时任务，无历史数据删除相关配置则不加载任务
+      outdated-offline-job: '0/50 * * * * ?'
+      di-offline-task-job: '0/40 * * * * ?'
+      mask-task-job: '0/35 * * * * ?'
+      # 共享中心-交换任务状态回写，按需配置
+      exchange-job: '0/35 * * * * ?'
+  # 网关访问地址
+  gatway:
+    host: 192.168.61.121:30008
+  #是否初始化沉浸式导航
+  navigation:
+    is-initialization: false
+
+# azkaban配置
+azkaban:
+  # 离线计算azkaban配置
+  offline:
+    url: http://${AZKABAN_HOST}/
+    username: ${DMP_AZKABAN_OFFLINE_USERNAME}
+    password: ${DMP_AZKABAN_OFFLINE_PASSWORD}
+  # 数据集成azkaban配置
+  di:
+    url: http://${AZKABAN_HOST}/
+    username: ${DMP_AZKABAN_DI_USERNAME}
+    password: ${DMP_AZKABAN_DI_PASSWORD}
